@@ -14,6 +14,10 @@ public class PlayerController : MonoBehaviour
     private float moveTimer;
     public float moveTime = 0.2f; // Time between moves
     private List<Vector2Int> reachableTiles;
+    public GameObject attackHighlightPrefab; // Prefab for attack highlights
+
+    private bool isAttacking = false;
+    private Vector2Int attackDirection = Vector2Int.up; // Default attack direction
 
     private void Awake()
     {
@@ -36,12 +40,16 @@ public class PlayerController : MonoBehaviour
 
     private void OnEnable()
     {
-        playerInputActions.Player.ConfirmMove.performed += OnConfirmMove;
+        playerInputActions.Player.Attack.performed += OnAttack;
+        playerInputActions.Player.Special.performed += OnSpecial;
+        playerInputActions.Player.Block.performed += OnBlock;
     }
 
     private void OnDisable()
     {
-        playerInputActions.Player.ConfirmMove.performed -= OnConfirmMove;
+        playerInputActions.Player.Attack.performed -= OnAttack;
+        playerInputActions.Player.Special.performed -= OnSpecial;
+        playerInputActions.Player.Block.performed -= OnBlock;
         gameBoardManager.OnBoardReady -= HighlightReachableTiles; // Unsubscribe from the event
 
         if (turnManager != null)
@@ -75,12 +83,30 @@ public class PlayerController : MonoBehaviour
             return; // No input, do not move
         }
 
+        ClearAttackState();
+
         Vector2Int targetGridPosition = gridPosition;
 
-        if (moveInput.x > 0) targetGridPosition += Vector2Int.right;
-        else if (moveInput.x < 0) targetGridPosition += Vector2Int.left;
-        else if (moveInput.y > 0) targetGridPosition += Vector2Int.up;
-        else if (moveInput.y < 0) targetGridPosition += Vector2Int.down;
+        if (moveInput.x > 0)
+        {
+            targetGridPosition += Vector2Int.right;
+            attackDirection = Vector2Int.right;
+        }
+        else if (moveInput.x < 0)
+        {
+            targetGridPosition += Vector2Int.left;
+            attackDirection = Vector2Int.left;
+        }
+        else if (moveInput.y > 0)
+        {
+            targetGridPosition += Vector2Int.up;
+            attackDirection = Vector2Int.up;
+        }
+        else if (moveInput.y < 0)
+        {
+            targetGridPosition += Vector2Int.down;
+            attackDirection = Vector2Int.down;
+        }
 
         targetGridPosition.x = Mathf.Clamp(targetGridPosition.x, 0, gameBoardManager.gridSize.x - 1);
         targetGridPosition.y = Mathf.Clamp(targetGridPosition.y, 0, gameBoardManager.gridSize.y - 1);
@@ -127,11 +153,47 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnConfirmMove(InputAction.CallbackContext context)
+    private void OnAttack(InputAction.CallbackContext context)
     {
-        initialPosition = gridPosition; // Update initial position after confirming move
+        if (isAttacking)
+        {
+            playerUnit.ExecuteAttack(gridPosition, attackDirection);
+            isAttacking = false;
+            turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after executing attack
+        }
+        else
+        {
+            playerUnit.Attack(gridPosition, attackDirection, attackHighlightPrefab);
+            isAttacking = true;
+        }
+    }
+
+    private void OnSpecial(InputAction.CallbackContext context)
+    {
+        PerformAction(playerUnit.Special);
+    }
+
+    private void OnBlock(InputAction.CallbackContext context)
+    {
+        PerformAction(playerUnit.Block);
+    }
+
+    private void PerformAction(System.Action action)
+    {
+        ClearAttackState();
+        action.Invoke();
+        initialPosition = gridPosition; // Update initial position after performing action
         HighlightReachableTiles(); // Highlight reachable tiles for the new position
-        turnManager.EndPlayerTurn(resetTurnTime: false); // End player turn after confirming move
+        turnManager.EndPlayerTurn(resetTurnTime: false); // End player turn after performing action
+    }
+
+    private void ClearAttackState()
+    {
+        if (isAttacking)
+        {
+            playerUnit.ClearAttackHighlights();
+            isAttacking = false;
+        }
     }
 
     private void StartPlayerTurn()
@@ -145,5 +207,6 @@ public class PlayerController : MonoBehaviour
         initialPosition = gridPosition;
         // Clear highlights at the end of the turn
         gameBoardManager.ClearHighlights();
+        ClearAttackState(); // Clear attack highlights if any
     }
 }
