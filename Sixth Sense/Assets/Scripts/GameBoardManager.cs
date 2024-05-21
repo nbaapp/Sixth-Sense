@@ -52,6 +52,30 @@ public class GameBoardManager : MonoBehaviour
         highlightObjects.Clear();
     }
 
+    public void HighlightTile(Vector2Int position, GameObject highlightPrefab)
+{
+    // Implement highlighting logic
+}
+
+public void ClearHighlightAtPosition(Vector2Int position, GameObject highlightPrefab)
+{
+    // Implement logic to clear a specific highlight
+}
+
+public bool IsPositionWithinBounds(Vector2Int position)
+{
+    // Implement logic to check if position is within bounds
+    return true;
+}
+
+public bool IsPositionOccupied(Vector2Int position)
+{
+    // Implement logic to check if position is occupied
+    return false;
+}
+
+
     public delegate void BoardReady();
     public event BoardReady OnBoardReady;
 }
+

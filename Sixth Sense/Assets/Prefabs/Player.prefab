@@ -49,7 +49,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveTime: 0.2
-  attackHighlightPrefab: {fileID: 8033289620034464564, guid: 5f2585cbe18394ea28257ecf08205a18, type: 3}
+  actionHighlightPrefab: {fileID: 8033289620034464564, guid: 5f2585cbe18394ea28257ecf08205a18, type: 3}
 --- !u!114 &3442304185379952826
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,7 +69,8 @@ MonoBehaviour:
   defense: 5
   resistance: 5
   moveSpeed: 2
-  equippedWeapon: {fileID: 0}
+  equippedWeapon: {fileID: 11400000, guid: d5018d3ae0a0f47c9992303480828795, type: 2}
+  equippedSpecial: {fileID: 11400000, guid: acf9634e152e4474f98d4e29936294ed, type: 2}
 --- !u!212 &5213463705965564262
 SpriteRenderer:
   m_ObjectHideFlags: 0

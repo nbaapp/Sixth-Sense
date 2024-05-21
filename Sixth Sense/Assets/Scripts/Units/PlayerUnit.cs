@@ -4,19 +4,25 @@ using System.Collections.Generic;
 public class PlayerUnit : Unit
 {
     public Weapon equippedWeapon;
+    public Special equippedSpecial;
+    private int specialCooldown;
 
-    private List<GameObject> attackHighlights = new List<GameObject>();
+    private List<GameObject> actionHighlights = new List<GameObject>();
+
+    public int SpecialCooldown => specialCooldown; // Getter for the special cooldown
 
     public void Attack(Vector2Int position, Vector2Int direction, GameObject highlightPrefab)
     {
         if (equippedWeapon == null) return;
+
+        ClearActionHighlights();
 
         List<Vector2Int> attackTiles = equippedWeapon.GetAttackTiles(position, direction);
 
         foreach (var tile in attackTiles)
         {
             GameObject highlight = Instantiate(highlightPrefab, new Vector3(tile.x, tile.y, -1), Quaternion.identity);
-            attackHighlights.Add(highlight);
+            actionHighlights.Add(highlight);
         }
     }
 
@@ -39,29 +45,58 @@ public class PlayerUnit : Unit
             }
         }
 
-        // Clear attack highlights
-        ClearAttackHighlights();
+        // Clear action highlights
+        ClearActionHighlights();
     }
 
-    public void ClearAttackHighlights()
+    public void Special(Vector2Int position, Vector2Int direction, GameObject highlightPrefab)
+{
+    if (equippedSpecial == null || specialCooldown > 0) return;
+
+    ClearActionHighlights();
+
+    List<Vector2Int> specialTiles = equippedSpecial.GetAffectedTiles(position, direction);
+
+    foreach (var tile in specialTiles)
     {
-        foreach (var highlight in attackHighlights)
+        GameObject highlight = Instantiate(highlightPrefab, new Vector3(tile.x, tile.y, -1), Quaternion.identity);
+        actionHighlights.Add(highlight);
+    }
+}
+
+public void ExecuteSpecial(Vector2Int position, Vector2Int direction)
+{
+    if (equippedSpecial == null || specialCooldown > 0) return;
+
+    equippedSpecial.ExecuteSpecial(position, direction);
+    specialCooldown = equippedSpecial.cooldown;
+
+    // Clear action highlights
+    ClearActionHighlights();
+}
+
+
+    public void ClearActionHighlights()
+    {
+        foreach (var highlight in actionHighlights)
         {
             Destroy(highlight);
         }
-        attackHighlights.Clear();
+        actionHighlights.Clear();
+    }
+
+    public void ReduceSpecialCooldown()
+    {
+        if (specialCooldown > 0)
+        {
+            specialCooldown--;
+        }
     }
 
     public void Block()
     {
         // Placeholder for block action
         Debug.Log("Player Block");
-    }
-
-    public void Special()
-    {
-        // Placeholder for special action
-        Debug.Log("Player Special");
     }
 
     protected override void Die()

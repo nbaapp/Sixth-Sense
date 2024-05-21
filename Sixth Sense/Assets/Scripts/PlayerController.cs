@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using TMPro;
 using System.Collections.Generic;
 
 public class PlayerController : MonoBehaviour
@@ -14,10 +15,13 @@ public class PlayerController : MonoBehaviour
     private float moveTimer;
     public float moveTime = 0.2f; // Time between moves
     private List<Vector2Int> reachableTiles;
-    public GameObject attackHighlightPrefab; // Prefab for attack highlights
+    public GameObject actionHighlightPrefab; // Prefab for action highlights
+    public TextMeshProUGUI specialIndicator; // Reference to the TextMeshPro UI element
 
     private bool isAttacking = false;
+    private bool isSpecialing = false;
     private Vector2Int attackDirection = Vector2Int.up; // Default attack direction
+    private bool isLockingPosition = false;
 
     private void Awake()
     {
@@ -36,6 +40,8 @@ public class PlayerController : MonoBehaviour
 
         turnManager.OnPlayerTurnStart += StartPlayerTurn;
         turnManager.OnPlayerTurnEnd += EndPlayerTurn;
+
+        UpdateSpecialIndicator(); // Initial update of the special indicator
     }
 
     private void OnEnable()
@@ -43,6 +49,8 @@ public class PlayerController : MonoBehaviour
         playerInputActions.Player.Attack.performed += OnAttack;
         playerInputActions.Player.Special.performed += OnSpecial;
         playerInputActions.Player.Block.performed += OnBlock;
+        playerInputActions.Player.LockPosition.performed += OnLockPosition;
+        playerInputActions.Player.LockPosition.canceled += OnLockPositionCanceled;
     }
 
     private void OnDisable()
@@ -50,6 +58,8 @@ public class PlayerController : MonoBehaviour
         playerInputActions.Player.Attack.performed -= OnAttack;
         playerInputActions.Player.Special.performed -= OnSpecial;
         playerInputActions.Player.Block.performed -= OnBlock;
+        playerInputActions.Player.LockPosition.performed -= OnLockPosition;
+        playerInputActions.Player.LockPosition.canceled -= OnLockPositionCanceled;
         gameBoardManager.OnBoardReady -= HighlightReachableTiles; // Unsubscribe from the event
 
         if (turnManager != null)
@@ -68,22 +78,34 @@ public class PlayerController : MonoBehaviour
                 moveTimer -= Time.deltaTime;
                 if (moveTimer <= 0)
                 {
-                    Move();
+                    MoveOrRotate();
                 }
             }
         }
     }
 
-    private void Move()
+    private void MoveOrRotate()
     {
         Vector2 moveInput = playerInputActions.Player.Move.ReadValue<Vector2>();
 
         if (moveInput == Vector2.zero)
         {
-            return; // No input, do not move
+            return; // No input, do not move or rotate
         }
 
-        ClearAttackState();
+        if (isLockingPosition)
+        {
+            Rotate(moveInput);
+        }
+        else
+        {
+            Move(moveInput);
+        }
+    }
+
+    private void Move(Vector2 moveInput)
+    {
+        ClearActionState();
 
         Vector2Int targetGridPosition = gridPosition;
 
@@ -117,6 +139,28 @@ public class PlayerController : MonoBehaviour
             moveTimer = moveTime; // Set a fixed cooldown time between moves
         }
     }
+
+    private void Rotate(Vector2 moveInput)
+{
+    if (moveInput.x > 0) attackDirection = Vector2Int.right;
+    else if (moveInput.x < 0) attackDirection = Vector2Int.left;
+    else if (moveInput.y > 0) attackDirection = Vector2Int.up;
+    else if (moveInput.y < 0) attackDirection = Vector2Int.down;
+
+    // Update action highlights if currently attacking or specialing
+    if (isAttacking || isSpecialing)
+    {
+        playerUnit.ClearActionHighlights();
+        if (isAttacking)
+        {
+            playerUnit.Attack(gridPosition, attackDirection, actionHighlightPrefab);
+        }
+        else if (isSpecialing)
+        {
+            playerUnit.Special(gridPosition, attackDirection, actionHighlightPrefab);
+        }
+    }
+}
 
     private void MoveToGridPosition(Vector2Int targetGridPosition)
     {
@@ -163,15 +207,28 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            playerUnit.Attack(gridPosition, attackDirection, attackHighlightPrefab);
+            playerUnit.Attack(gridPosition, attackDirection, actionHighlightPrefab);
             isAttacking = true;
+            isSpecialing = false; // Cancel special if it's in progress
         }
     }
 
     private void OnSpecial(InputAction.CallbackContext context)
+{
+    if (isSpecialing)
     {
-        PerformAction(playerUnit.Special);
+        playerUnit.ExecuteSpecial(gridPosition, attackDirection);
+        isSpecialing = false;
+        turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after executing special
+        UpdateSpecialIndicator();
     }
+    else if (playerUnit.SpecialCooldown == 0)
+    {
+        playerUnit.Special(gridPosition, attackDirection, actionHighlightPrefab);
+        isSpecialing = true;
+        isAttacking = false; // Cancel attack if it's in progress
+    }
+}
 
     private void OnBlock(InputAction.CallbackContext context)
     {
@@ -180,24 +237,37 @@ public class PlayerController : MonoBehaviour
 
     private void PerformAction(System.Action action)
     {
-        ClearAttackState();
+        ClearActionState();
         action.Invoke();
         initialPosition = gridPosition; // Update initial position after performing action
         HighlightReachableTiles(); // Highlight reachable tiles for the new position
         turnManager.EndPlayerTurn(resetTurnTime: false); // End player turn after performing action
     }
 
-    private void ClearAttackState()
+    private void ClearActionState()
     {
-        if (isAttacking)
+        if (isAttacking || isSpecialing)
         {
-            playerUnit.ClearAttackHighlights();
+            playerUnit.ClearActionHighlights();
             isAttacking = false;
+            isSpecialing = false;
         }
+    }
+
+    private void OnLockPosition(InputAction.CallbackContext context)
+    {
+        isLockingPosition = true;
+    }
+
+    private void OnLockPositionCanceled(InputAction.CallbackContext context)
+    {
+        isLockingPosition = false;
     }
 
     private void StartPlayerTurn()
     {
+        playerUnit.ReduceSpecialCooldown();
+        UpdateSpecialIndicator();
         HighlightReachableTiles(); // Highlight reachable tiles at the start of the turn
     }
 
@@ -207,6 +277,21 @@ public class PlayerController : MonoBehaviour
         initialPosition = gridPosition;
         // Clear highlights at the end of the turn
         gameBoardManager.ClearHighlights();
-        ClearAttackState(); // Clear attack highlights if any
+        ClearActionState(); // Clear action highlights if any
+        isLockingPosition = false;
+    }
+
+    private void UpdateSpecialIndicator()
+    {
+        if (playerUnit.SpecialCooldown > 0)
+        {
+            specialIndicator.text = "Special";
+            specialIndicator.color = Color.red;
+        }
+        else
+        {
+            specialIndicator.text = "Special";
+            specialIndicator.color = Color.green;
+        }
     }
 }
