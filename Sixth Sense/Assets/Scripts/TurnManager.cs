@@ -6,25 +6,31 @@ public class TurnManager : MonoBehaviour
     public float initialTurnTime = 15f; // Initial turn time
     public float minTurnTime = 2f; // Minimum turn time
     public float turnTimeDecrease = 1f; // Amount to decrease turn time after each successful action
-    public float enemyTurnDuration = 1f; // Duration of the enemy turn
+    public float enemyTurnDuration = 1f; // Duration of the enemy action execution
 
     private float currentTurnTime;
     private float turnTimer;
-    public bool isPlayerTurn { get; private set; } = true; // Expose isPlayerTurn as a public property
+    public bool isPlayerTurn { get; private set; } = false; // Expose isPlayerTurn as a public property
+    private int turnCount = 0;
 
     public delegate void TurnEvent();
     public event TurnEvent OnPlayerTurnStart;
     public event TurnEvent OnPlayerTurnEnd;
-    public event TurnEvent OnEnemyTurnStart;
-    public event TurnEvent OnEnemyTurnEnd;
+    public event TurnEvent OnEnemyActionSelectStart;
+    public event TurnEvent OnEnemyActionSelectEnd;
+    public event TurnEvent OnEnemyActionExecuteStart;
+    public event TurnEvent OnEnemyActionExecuteEnd;
+    private GameBoardManager gameBoardManager;
 
     public float CurrentTurnTime => currentTurnTime;
     public float RemainingTurnTime => turnTimer;
 
     private void Start()
     {
+        gameBoardManager = FindObjectOfType<GameBoardManager>();
         currentTurnTime = initialTurnTime;
-        StartPlayerTurn();
+        StartEnemyActionSelect();
+        turnCount = 0;
     }
 
     private void Update()
@@ -38,6 +44,34 @@ public class TurnManager : MonoBehaviour
             }
         }
     }
+
+    public int GetTurnCount()
+    {
+        return turnCount;
+    }
+
+    private void StartEnemyActionSelect()
+    {
+        OnEnemyActionSelectStart?.Invoke(); // Notify that the enemy action selection has started
+        StartCoroutine(EnemyActionSelect());
+    }
+
+    private IEnumerator EnemyActionSelect()
+    {
+        foreach (var enemy in FindObjectsOfType<Enemy>())
+        {
+            if (enemy != null)
+            {
+                enemy.SelectAction();
+                yield return new WaitForSeconds(enemyTurnDuration);
+            }
+        }
+
+        OnEnemyActionSelectEnd?.Invoke(); // Notify that the enemy action selection has ended
+
+        StartPlayerTurn();
+    }
+
 
     private void StartPlayerTurn()
     {
@@ -58,21 +92,32 @@ public class TurnManager : MonoBehaviour
             currentTurnTime = Mathf.Max(minTurnTime, currentTurnTime - turnTimeDecrease);
         }
         
+        turnCount++;
         isPlayerTurn = false;
         OnPlayerTurnEnd?.Invoke(); // Notify that the player turn has ended
-        StartCoroutine(EnemyTurn());
+        StartCoroutine(EnemyActionExecute());
     }
 
-    private IEnumerator EnemyTurn()
+    private IEnumerator EnemyActionExecute()
     {
-        OnEnemyTurnStart?.Invoke(); // Notify that the enemy turn has started
+        OnEnemyActionExecuteStart?.Invoke(); // Notify that the enemy action execution has started
 
-        // Pause for the duration of the enemy turn
+        // Simulate enemy action execution duration
         yield return new WaitForSeconds(enemyTurnDuration);
 
-        OnEnemyTurnEnd?.Invoke(); // Notify that the enemy turn has ended
+        foreach (var enemy in FindObjectsOfType<Enemy>())
+        {
+            if (enemy != null)
+            {
+                enemy.ExecuteAction();
+            }
+        }
 
-        // Start the next player turn
-        StartPlayerTurn();
+        gameBoardManager.ClearHighlights("Enemy");
+
+        OnEnemyActionExecuteEnd?.Invoke(); // Notify that the enemy action execution has ended
+
+        // Start the next enemy action selection
+        StartEnemyActionSelect();
     }
 }

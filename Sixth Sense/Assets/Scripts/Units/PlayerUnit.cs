@@ -6,23 +6,30 @@ public class PlayerUnit : Unit
     public Weapon equippedWeapon;
     public Special equippedSpecial;
     private int specialCooldown;
-
-    private List<GameObject> actionHighlights = new List<GameObject>();
-
     public int SpecialCooldown => specialCooldown; // Getter for the special cooldown
 
-    public void Attack(Vector2Int position, Vector2Int direction, GameObject highlightPrefab)
+    public HealthBar healthBar;
+
+    protected override void Start()
+    {
+        base.Start();
+        currentPosition = Vector2Int.RoundToInt(transform.position);
+        gameBoardManager = FindObjectOfType<GameBoardManager>(); // Get the GameBoardManager instance
+        gameBoardManager.SetUnitPosition(currentPosition, this); // Register the initial position
+        healthBar.SetMaxHealth(maxHealth);
+    }
+
+    public void Attack(Vector2Int position, Vector2Int direction)
     {
         if (equippedWeapon == null) return;
 
-        ClearActionHighlights();
+        gameBoardManager.ClearHighlights("Attack");
 
         List<Vector2Int> attackTiles = equippedWeapon.GetAttackTiles(position, direction);
 
         foreach (var tile in attackTiles)
         {
-            GameObject highlight = Instantiate(highlightPrefab, new Vector3(tile.x, tile.y, -1), Quaternion.identity);
-            actionHighlights.Add(highlight);
+            gameBoardManager.HighlightTile(tile, "Attack");
         }
     }
 
@@ -34,55 +41,50 @@ public class PlayerUnit : Unit
 
         foreach (var tile in attackTiles)
         {
-            Collider2D[] colliders = Physics2D.OverlapPointAll(new Vector2(tile.x, tile.y));
-            foreach (var collider in colliders)
+            if (gameBoardManager.GetOccupantType(tile) != OccupantType.None)
             {
-                Unit unit = collider.GetComponent<Unit>();
-                if (unit != null && unit != this)
+                Unit unit = gameBoardManager.GetUnitAtPosition(tile);
+                if (equippedWeapon.isMagical)
                 {
-                    unit.TakeDamage(strength); // Assume physical attack, using strength
+                    MagicalAttack(unit, equippedWeapon.magicalStrength);
+                }
+                else if (equippedWeapon.isPhysical)
+                {
+                    PhysicalAttack(unit, equippedWeapon.physicalStrength);
                 }
             }
         }
 
-        // Clear action highlights
-        ClearActionHighlights();
+
+        // Clear attack highlights
+        gameBoardManager.ClearHighlights("Attack");
     }
 
-    public void Special(Vector2Int position, Vector2Int direction, GameObject highlightPrefab)
-{
-    if (equippedSpecial == null || specialCooldown > 0) return;
-
-    ClearActionHighlights();
-
-    List<Vector2Int> specialTiles = equippedSpecial.GetAffectedTiles(position, direction);
-
-    foreach (var tile in specialTiles)
+    public void Special(Vector2Int position, Vector2Int direction)
     {
-        GameObject highlight = Instantiate(highlightPrefab, new Vector3(tile.x, tile.y, -1), Quaternion.identity);
-        actionHighlights.Add(highlight);
-    }
-}
+        if (equippedSpecial == null || specialCooldown > 0) return;
 
-public void ExecuteSpecial(Vector2Int position, Vector2Int direction)
-{
-    if (equippedSpecial == null || specialCooldown > 0) return;
+        gameBoardManager.ClearHighlights("Attack"); // Assuming same highlight type for special
 
-    equippedSpecial.ExecuteSpecial(position, direction);
-    specialCooldown = equippedSpecial.cooldown;
+        List<Vector2Int> specialTiles = equippedSpecial.GetAffectedTiles(position, direction);
 
-    // Clear action highlights
-    ClearActionHighlights();
-}
-
-
-    public void ClearActionHighlights()
-    {
-        foreach (var highlight in actionHighlights)
+        foreach (var tile in specialTiles)
         {
-            Destroy(highlight);
+            gameBoardManager.HighlightTile(tile, "Attack"); // Assuming same highlight type for special
         }
-        actionHighlights.Clear();
+    }
+
+    public void ExecuteSpecial(Vector2Int position, Vector2Int direction)
+    {
+        if (equippedSpecial == null || specialCooldown > 0) return;
+
+        equippedSpecial.ExecuteSpecial(position, direction);
+        specialCooldown = equippedSpecial.cooldown;
+
+        ScreenShake.Instance.TriggerShake(0.2f, 0.2f);
+
+        // Clear special highlights
+        gameBoardManager.ClearHighlights("Attack"); // Assuming same highlight type for special
     }
 
     public void ReduceSpecialCooldown()
@@ -102,6 +104,20 @@ public void ExecuteSpecial(Vector2Int position, Vector2Int direction)
     protected override void Die()
     {
         base.Die();
+        gameBoardManager.RemoveUnitPosition(currentPosition);
         // Additional player-specific death handling
+    }
+
+    public override void TakeDamage(int damage)
+    {
+        base.TakeDamage(damage);
+        healthBar.SetHealth(currentHealth);
+        ScreenShake.Instance.TriggerShake(0.2f, 0.1f);
+    }
+
+    public override void Heal(int amount)
+    {
+        base.Heal(amount);
+        healthBar.SetHealth(currentHealth);
     }
 }

@@ -44,6 +44,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Player
+  - name: Highlights
+    uniqueID: 4226768239
+    locked: 0
+  - name: Units
     uniqueID: 1167936651
     locked: 0

@@ -9,10 +9,9 @@ public class GridRenderer : MonoBehaviour
     private void Start()
     {
         gameBoardManager = FindObjectOfType<GameBoardManager>();
-        DrawGrid();
     }
 
-    private void DrawGrid()
+    public void DrawGrid()
     {
         Vector2Int gridSize = gameBoardManager.gridSize;
 

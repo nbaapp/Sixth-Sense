@@ -4,73 +4,92 @@ using System.Collections.Generic;
 public class Slime : Enemy
 {
     private Vector2Int targetPosition;
-    private List<Vector2Int> attackPositions = new List<Vector2Int>();
+    private Vector2Int attackPosition;
+    public int TacklePower = 0;
 
-    public GameObject enemyAttackHighlightPrefab;
+    protected override void Awake()
+    {
+        base.Awake();
+    }
 
     public override void SelectAction()
     {
-        Vector2Int playerPosition = Vector2Int.RoundToInt(playerUnit.transform.position);
-        Vector2Int slimePosition = Vector2Int.RoundToInt(transform.position);
+        Tackle();
+    }
 
-        targetPosition = FindNearestAdjacentPosition(slimePosition, playerPosition);
+    private void Tackle()
+    {
+        Vector2Int playerPosition = playerUnit.GetUnitPosition();
+        Vector2Int currentPosition = GetUnitPosition();
 
-        if (targetPosition != slimePosition)
+        // Determine if adjacent to player
+        List<Vector2Int> adjacentPositions = GetAdjacentPositions(currentPosition);
+        bool isAdjacentToPlayer = adjacentPositions.Contains(playerPosition);
+
+        if (isAdjacentToPlayer)
         {
-            attackPositions.Clear();
-            attackPositions.Add(targetPosition);
-            HighlightAttackPositions();
+            // If adjacent to the player, attack the player's position
+            attackPosition = playerPosition;
+            targetedTiles.Add(attackPosition);
+            gameBoardManager.HighlightTile(attackPosition, "Enemy");
+        }
+        else
+        {
+            // Move towards the player within movement range
+            targetPosition = GetPositionWithinMovementRange(currentPosition, playerPosition, moveSpeed);
+            Move(targetPosition);
+
+            // After moving, determine the new adjacent positions
+            adjacentPositions = GetAdjacentPositions(targetPosition);
+            isAdjacentToPlayer = adjacentPositions.Contains(playerPosition);
+
+            if (isAdjacentToPlayer)
+            {
+                // If now adjacent to the player, attack the player's position
+                attackPosition = playerPosition;
+            }
+            else
+            {
+                // Otherwise, select a random adjacent position to attack
+                attackPosition = SelectRandomAttackPosition(adjacentPositions);
+            }
+
+            targetedTiles.Add(attackPosition);
+            gameBoardManager.HighlightTile(attackPosition, "Enemy");
         }
     }
 
-    public override void ExecuteAction()
+    private List<Vector2Int> GetAdjacentPositions(Vector2Int position)
     {
-        foreach (Vector2Int pos in attackPositions)
+        List<Vector2Int> adjacentPositions = new List<Vector2Int>
         {
-            if (pos == Vector2Int.RoundToInt(playerUnit.transform.position))
+            position + Vector2Int.up,
+            position + Vector2Int.down,
+            position + Vector2Int.left,
+            position + Vector2Int.right
+        };
+
+        return adjacentPositions;
+    }
+
+    private Vector2Int SelectRandomAttackPosition(List<Vector2Int> adjacentPositions)
+    {
+        List<Vector2Int> validPositions = new List<Vector2Int>();
+
+        foreach (Vector2Int pos in adjacentPositions)
+        {
+            if (!gameBoardManager.IsPositionOccupied(pos) || gameBoardManager.GetOccupantType(pos) == OccupantType.Player)
             {
-                playerUnit.TakeDamage(strength);
+                validPositions.Add(pos);
             }
         }
-        ClearHighlights();
-    }
 
-    protected override void ClearHighlights()
-    {
-        foreach (var pos in attackPositions)
+        if (validPositions.Count > 0)
         {
-            gameBoardManager.ClearHighlightAtPosition(pos, enemyAttackHighlightPrefab);
+            int randomIndex = Random.Range(0, validPositions.Count);
+            return validPositions[randomIndex];
         }
-        attackPositions.Clear();
-    }
 
-    private Vector2Int FindNearestAdjacentPosition(Vector2Int slimePosition, Vector2Int playerPosition)
-    {
-        Vector2Int[] directions = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-        float minDistance = float.MaxValue;
-        Vector2Int bestPosition = slimePosition;
-
-        foreach (Vector2Int dir in directions)
-        {
-            Vector2Int newPos = playerPosition + dir;
-            if (gameBoardManager.IsPositionWithinBounds(newPos) && !gameBoardManager.IsPositionOccupied(newPos))
-            {
-                float distance = Vector2Int.Distance(newPos, slimePosition);
-                if (distance < minDistance)
-                {
-                    minDistance = distance;
-                    bestPosition = newPos;
-                }
-            }
-        }
-        return bestPosition;
-    }
-
-    private void HighlightAttackPositions()
-    {
-        foreach (var pos in attackPositions)
-        {
-            gameBoardManager.HighlightTile(pos, enemyAttackHighlightPrefab);
-        }
+        return GetUnitPosition(); // No valid position to attack
     }
 }

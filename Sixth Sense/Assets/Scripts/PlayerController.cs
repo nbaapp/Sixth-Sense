@@ -6,186 +6,138 @@ using System.Collections.Generic;
 public class PlayerController : MonoBehaviour
 {
     private PlayerUnit playerUnit;
-    private Vector2Int gridPosition; // Current grid position
-    private Vector2Int initialPosition; // Initial position for the turn
+    private Vector2Int gridPosition;
+    private Vector2Int initialPosition;
     private PlayerInputActions playerInputActions;
     private GameBoardManager gameBoardManager;
     private TurnManager turnManager;
+
     private bool isMoving;
     private float moveTimer;
-    public float moveTime = 0.2f; // Time between moves
-    private List<Vector2Int> reachableTiles;
-    public GameObject actionHighlightPrefab; // Prefab for action highlights
-    public TextMeshProUGUI specialIndicator; // Reference to the TextMeshPro UI element
-
-    private bool isAttacking = false;
-    private bool isSpecialing = false;
-    private Vector2Int attackDirection = Vector2Int.up; // Default attack direction
-    private bool isLockingPosition = false;
+    public float moveTime = 2f;
+    private List<Vector2Int> reachableTiles = new List<Vector2Int>();
+    public TextMeshProUGUI specialIndicator;
+    private bool isAttacking;
+    private bool isSpecialing;
+    private Vector2Int attackDirection = Vector2Int.up;
+    private bool isLockingPosition;
 
     private void Awake()
     {
-        playerInputActions = new PlayerInputActions();
-        playerInputActions.Enable();
         playerUnit = GetComponent<PlayerUnit>();
-        gridPosition = Vector2Int.RoundToInt(transform.position);
-    }
-
-    private void Start()
-    {
+        playerInputActions = new PlayerInputActions();
         gameBoardManager = FindObjectOfType<GameBoardManager>();
         turnManager = FindObjectOfType<TurnManager>();
-        initialPosition = gridPosition;
-        gameBoardManager.OnBoardReady += HighlightReachableTiles; // Subscribe to the event
-
-        turnManager.OnPlayerTurnStart += StartPlayerTurn;
-        turnManager.OnPlayerTurnEnd += EndPlayerTurn;
-
-        UpdateSpecialIndicator(); // Initial update of the special indicator
+        playerInputActions.Player.Attack.performed += ctx => OnAttack();
+        playerInputActions.Player.Special.performed += ctx => OnSpecial();
+        playerInputActions.Player.Block.performed += ctx => OnBlock();
+        playerInputActions.Player.LockPosition.performed += ctx => OnLockPosition();
+        playerInputActions.Player.LockPosition.canceled += ctx => OnLockPositionCanceled();
     }
 
     private void OnEnable()
     {
-        playerInputActions.Player.Attack.performed += OnAttack;
-        playerInputActions.Player.Special.performed += OnSpecial;
-        playerInputActions.Player.Block.performed += OnBlock;
-        playerInputActions.Player.LockPosition.performed += OnLockPosition;
-        playerInputActions.Player.LockPosition.canceled += OnLockPositionCanceled;
+        playerInputActions.Player.Enable();
+        turnManager.OnPlayerTurnStart += StartPlayerTurn;
+        turnManager.OnPlayerTurnEnd += EndPlayerTurn;
     }
 
     private void OnDisable()
     {
-        playerInputActions.Player.Attack.performed -= OnAttack;
-        playerInputActions.Player.Special.performed -= OnSpecial;
-        playerInputActions.Player.Block.performed -= OnBlock;
-        playerInputActions.Player.LockPosition.performed -= OnLockPosition;
-        playerInputActions.Player.LockPosition.canceled -= OnLockPositionCanceled;
-        gameBoardManager.OnBoardReady -= HighlightReachableTiles; // Unsubscribe from the event
+        playerInputActions.Player.Disable();
+        turnManager.OnPlayerTurnStart -= StartPlayerTurn;
+        turnManager.OnPlayerTurnEnd -= EndPlayerTurn;
+    }
 
-        if (turnManager != null)
-        {
-            turnManager.OnPlayerTurnStart -= StartPlayerTurn;
-            turnManager.OnPlayerTurnEnd -= EndPlayerTurn;
-        }
+    private void Start()
+    {
+        initialPosition = Vector2Int.RoundToInt(transform.position);
+        gridPosition = initialPosition;
+        gameBoardManager.SetUnitPosition(gridPosition, playerUnit);
+        UpdateSpecialIndicator();
     }
 
     private void Update()
     {
-        if (turnManager != null && turnManager.isPlayerTurn)
+        if (!turnManager.isPlayerTurn || isMoving) return;
+
+        Vector2 inputDirection = playerInputActions.Player.Move.ReadValue<Vector2>();
+
+        if (inputDirection != Vector2.zero)
         {
-            if (!isMoving)
+            MoveOrRotate(Vector2Int.RoundToInt(inputDirection));
+        }
+    }
+
+    private void MoveOrRotate(Vector2Int direction)
+    {
+        if (isLockingPosition)
+        {
+            Rotate(direction);
+        }
+        else
+        {
+            Move(gridPosition + direction);
+        }
+    }
+
+    private void Move(Vector2Int targetPosition)
+    {
+        if (!reachableTiles.Contains(targetPosition)) return;
+        ClearActionState();
+        Debug.Log($"Moving to {targetPosition}");
+        playerUnit.Move(targetPosition); // Use Unit's Move method
+        gridPosition = targetPosition;
+        isMoving = true;
+        moveTimer = moveTime;
+
+        Invoke(nameof(StopMoving), moveTimer);
+    }
+
+    private void StopMoving()
+    {
+        isMoving = false;
+    }
+
+    private void Rotate(Vector2Int direction)
+    {
+        if (direction.x > 0) attackDirection = Vector2Int.right;
+        else if (direction.x < 0) attackDirection = Vector2Int.left;
+        else if (direction.y > 0) attackDirection = Vector2Int.up;
+        else if (direction.y < 0) attackDirection = Vector2Int.down;
+
+        // Update action highlights if currently attacking or specialing
+        if (isAttacking || isSpecialing)
+        {
+            gameBoardManager.ClearHighlights("Attack");
+            if (isAttacking)
             {
-                moveTimer -= Time.deltaTime;
-                if (moveTimer <= 0)
-                {
-                    MoveOrRotate();
-                }
+                playerUnit.Attack(gridPosition, attackDirection);
+            }
+            else if (isSpecialing)
+            {
+                playerUnit.Special(gridPosition, attackDirection);
             }
         }
     }
 
-    private void MoveOrRotate()
-    {
-        Vector2 moveInput = playerInputActions.Player.Move.ReadValue<Vector2>();
-
-        if (moveInput == Vector2.zero)
-        {
-            return; // No input, do not move or rotate
-        }
-
-        if (isLockingPosition)
-        {
-            Rotate(moveInput);
-        }
-        else
-        {
-            Move(moveInput);
-        }
-    }
-
-    private void Move(Vector2 moveInput)
-    {
-        ClearActionState();
-
-        Vector2Int targetGridPosition = gridPosition;
-
-        if (moveInput.x > 0)
-        {
-            targetGridPosition += Vector2Int.right;
-            attackDirection = Vector2Int.right;
-        }
-        else if (moveInput.x < 0)
-        {
-            targetGridPosition += Vector2Int.left;
-            attackDirection = Vector2Int.left;
-        }
-        else if (moveInput.y > 0)
-        {
-            targetGridPosition += Vector2Int.up;
-            attackDirection = Vector2Int.up;
-        }
-        else if (moveInput.y < 0)
-        {
-            targetGridPosition += Vector2Int.down;
-            attackDirection = Vector2Int.down;
-        }
-
-        targetGridPosition.x = Mathf.Clamp(targetGridPosition.x, 0, gameBoardManager.gridSize.x - 1);
-        targetGridPosition.y = Mathf.Clamp(targetGridPosition.y, 0, gameBoardManager.gridSize.y - 1);
-
-        if (reachableTiles.Contains(targetGridPosition))
-        {
-            MoveToGridPosition(targetGridPosition);
-            moveTimer = moveTime; // Set a fixed cooldown time between moves
-        }
-    }
-
-    private void Rotate(Vector2 moveInput)
-{
-    if (moveInput.x > 0) attackDirection = Vector2Int.right;
-    else if (moveInput.x < 0) attackDirection = Vector2Int.left;
-    else if (moveInput.y > 0) attackDirection = Vector2Int.up;
-    else if (moveInput.y < 0) attackDirection = Vector2Int.down;
-
-    // Update action highlights if currently attacking or specialing
-    if (isAttacking || isSpecialing)
-    {
-        playerUnit.ClearActionHighlights();
-        if (isAttacking)
-        {
-            playerUnit.Attack(gridPosition, attackDirection, actionHighlightPrefab);
-        }
-        else if (isSpecialing)
-        {
-            playerUnit.Special(gridPosition, attackDirection, actionHighlightPrefab);
-        }
-    }
-}
-
-    private void MoveToGridPosition(Vector2Int targetGridPosition)
-    {
-        Vector3 targetPosition = new Vector3(targetGridPosition.x, targetGridPosition.y, transform.position.z);
-        transform.position = targetPosition;
-        gridPosition = targetGridPosition;
-        isMoving = false; // Allow the next movement
-    }
-
     private void HighlightReachableTiles()
     {
-        // Clear previous highlights
-        gameBoardManager.ClearHighlights();
+        gameBoardManager.ClearHighlights("Move");
+        reachableTiles.Clear();
 
-        reachableTiles = new List<Vector2Int>();
+        Debug.Log("Highlighting reachable tiles");
+
+        // Calculate reachable tiles based on the player's move speed
         for (int x = -playerUnit.moveSpeed; x <= playerUnit.moveSpeed; x++)
         {
             for (int y = -playerUnit.moveSpeed; y <= playerUnit.moveSpeed; y++)
             {
-                Vector2Int tilePosition = initialPosition + new Vector2Int(x, y);
-                if (Mathf.Abs(x) + Mathf.Abs(y) <= playerUnit.moveSpeed && 
-                    tilePosition.x >= 0 && tilePosition.x < gameBoardManager.gridSize.x &&
-                    tilePosition.y >= 0 && tilePosition.y < gameBoardManager.gridSize.y)
+                Vector2Int newPos = gridPosition + new Vector2Int(x, y);
+                if (Mathf.Abs(x) + Mathf.Abs(y) <= playerUnit.moveSpeed &&
+                    gameBoardManager.IsPositionWithinBounds(newPos) && !gameBoardManager.IsPositionOccupied(newPos, gridPosition))
                 {
-                    reachableTiles.Add(tilePosition);
+                    reachableTiles.Add(newPos);
                 }
             }
         }
@@ -193,11 +145,11 @@ public class PlayerController : MonoBehaviour
         // Highlight tiles with overlay objects
         foreach (Vector2Int tile in reachableTiles)
         {
-            gameBoardManager.HighlightTile(tile);
+            gameBoardManager.HighlightTile(tile, "Move");
         }
     }
 
-    private void OnAttack(InputAction.CallbackContext context)
+    private void OnAttack()
     {
         if (isAttacking)
         {
@@ -207,30 +159,30 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            playerUnit.Attack(gridPosition, attackDirection, actionHighlightPrefab);
+            playerUnit.Attack(gridPosition, attackDirection);
             isAttacking = true;
             isSpecialing = false; // Cancel special if it's in progress
         }
     }
 
-    private void OnSpecial(InputAction.CallbackContext context)
-{
-    if (isSpecialing)
+    private void OnSpecial()
     {
-        playerUnit.ExecuteSpecial(gridPosition, attackDirection);
-        isSpecialing = false;
-        turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after executing special
-        UpdateSpecialIndicator();
+        if (isSpecialing)
+        {
+            playerUnit.ExecuteSpecial(gridPosition, attackDirection);
+            isSpecialing = false;
+            turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after executing special
+            UpdateSpecialIndicator();
+        }
+        else if (playerUnit.SpecialCooldown == 0)
+        {
+            playerUnit.Special(gridPosition, attackDirection);
+            isSpecialing = true;
+            isAttacking = false; // Cancel attack if it's in progress
+        }
     }
-    else if (playerUnit.SpecialCooldown == 0)
-    {
-        playerUnit.Special(gridPosition, attackDirection, actionHighlightPrefab);
-        isSpecialing = true;
-        isAttacking = false; // Cancel attack if it's in progress
-    }
-}
 
-    private void OnBlock(InputAction.CallbackContext context)
+    private void OnBlock()
     {
         PerformAction(playerUnit.Block);
     }
@@ -244,22 +196,23 @@ public class PlayerController : MonoBehaviour
         turnManager.EndPlayerTurn(resetTurnTime: false); // End player turn after performing action
     }
 
+
     private void ClearActionState()
     {
         if (isAttacking || isSpecialing)
         {
-            playerUnit.ClearActionHighlights();
+            gameBoardManager.ClearHighlights("Attack");
             isAttacking = false;
             isSpecialing = false;
         }
     }
 
-    private void OnLockPosition(InputAction.CallbackContext context)
+    private void OnLockPosition()
     {
         isLockingPosition = true;
     }
 
-    private void OnLockPositionCanceled(InputAction.CallbackContext context)
+    private void OnLockPositionCanceled()
     {
         isLockingPosition = false;
     }
@@ -276,7 +229,7 @@ public class PlayerController : MonoBehaviour
         // Update initial position even if no move is made
         initialPosition = gridPosition;
         // Clear highlights at the end of the turn
-        gameBoardManager.ClearHighlights();
+        gameBoardManager.ClearHighlights("Move");
         ClearActionState(); // Clear action highlights if any
         isLockingPosition = false;
     }

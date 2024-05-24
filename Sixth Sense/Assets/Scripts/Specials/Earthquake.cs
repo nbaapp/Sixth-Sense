@@ -28,17 +28,23 @@ public class Earthquake : Special
 
     public override void ExecuteSpecial(Vector2Int position, Vector2Int direction)
     {
+        if (playerUnit == null) getPlayerUnit();
+        if (gameBoardManager == null) getGameBoardManager();
+        
         List<Vector2Int> affectedTiles = GetAffectedTiles(position, direction);
 
         foreach (var tile in affectedTiles)
         {
-            Collider2D[] colliders = Physics2D.OverlapPointAll(new Vector2(tile.x, tile.y));
-            foreach (var collider in colliders)
+            if (gameBoardManager.GetOccupantType(tile) == OccupantType.Enemy)
             {
-                Unit unit = collider.GetComponent<Unit>();
-                if (unit != null)
+                Unit unit = gameBoardManager.GetUnitAtPosition(tile);
+                if (isMagical)
                 {
-                    unit.TakeDamage(10); // Adjust damage as needed
+                    playerUnit.MagicalAttack(unit, magicalStrength);
+                }
+                else if (isPhysical)
+                {
+                    playerUnit.PhysicalAttack(unit, physicalStrength);
                 }
             }
         }

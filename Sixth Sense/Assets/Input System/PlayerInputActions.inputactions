@@ -173,6 +173,17 @@
                 },
                 {
                     "name": "",
+                    "id": "7f5d24af-dcc1-4e60-acde-5c5e09613f50",
+                    "path": "<Gamepad>/leftStick",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "6b05df96-8a3f-4e51-982d-200e07da2b97",
                     "path": "<Gamepad>/buttonSouth",
                     "interactions": "",
