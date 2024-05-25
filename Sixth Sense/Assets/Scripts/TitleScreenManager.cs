@@ -3,6 +3,16 @@ using UnityEngine.SceneManagement;
 
 public class TitleScreenManager : MonoBehaviour
 {
+    public GameObject mainTitle;
+    public GameObject credits;
+    public GameObject howToPlay;
+
+    public void Start()
+    {
+        mainTitle.SetActive(true);
+        credits.SetActive(false);
+        howToPlay.SetActive(false);
+    }
     public void StartGame()
     {
         SceneManager.LoadScene("Combat");
@@ -10,16 +20,22 @@ public class TitleScreenManager : MonoBehaviour
 
     public void OpenCredits()
     {
-        SceneManager.LoadScene("Credits");
+        mainTitle.SetActive(false);
+        howToPlay.SetActive(false);
+        credits.SetActive(true);
     }
 
     public void OpenHowToPlay()
     {
-        SceneManager.LoadScene("HowToPlay");
+        mainTitle.SetActive(false);
+        credits.SetActive(false);
+        howToPlay.SetActive(true);
     }
 
     public void OpenTitleScreen()
     {
-        SceneManager.LoadScene("TitleScreen");
+        credits.SetActive(false);
+        howToPlay.SetActive(false);
+        mainTitle.SetActive(true);
     }
 }
