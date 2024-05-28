@@ -582,6 +582,7 @@ MonoBehaviour:
   minTurnTime: 3
   turnTimeDecrease: 1
   enemyTurnDuration: 0.2
+  gameRunning: 1
 --- !u!114 &508962388
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -595,7 +596,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slimePrefab: {fileID: 4745170599274630729, guid: b8dd4d1c154664e55a640df7a3e029ca, type: 3}
-  totalEnemiesToSpawn: 30
+  totalEnemiesToSpawn: 3
   maxSpawnNumber: 3
   spawnInterval: 3
   slimeSpawnPercentage: 1
@@ -626,6 +627,7 @@ MonoBehaviour:
   uiManager: {fileID: 1394134039}
   playerController: {fileID: 1097826439}
   musicManager: {fileID: 2125643384}
+  turnManager: {fileID: 508962387}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1786,10 +1788,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e2460ba51dec747acbfcfdeacdbf6b31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioSource1: {fileID: 2125643381}
-  audioSource2: {fileID: 2125643383}
-  battleMusic: {fileID: 8300000, guid: 501076158a7a3455382f6ea88ca31490, type: 3}
-  victoryMusic: {fileID: 8300000, guid: 8706f4fcffd5e47e39f29a9001e87c51, type: 3}
+  battleMusic: {fileID: 2125643381}
+  victoryMusic: {fileID: 2125643383}
 --- !u!1001 &1556604375143762127
 PrefabInstance:
   m_ObjectHideFlags: 0

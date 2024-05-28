@@ -2,43 +2,23 @@ using UnityEngine;
 
 public class MusicManager : MonoBehaviour
 {
-    public AudioSource audioSource1;
-    public AudioSource audioSource2;
-    public AudioClip battleMusic;
-    public AudioClip victoryMusic;
-    private bool isPlayingFirstClip = true;
+    public AudioSource battleMusic;
+    public AudioSource victoryMusic;
 
     void Start()
     {
-        PlayMusic(battleMusic);
+        battleMusic.Play();
     }
 
-    void PlayMusic(AudioClip clip)
+    public void PlayBattle()
     {
-        if (isPlayingFirstClip)
-        {
-            audioSource1.clip = clip;
-            audioSource1.Play();
-        }
-        else
-        {
-            audioSource2.clip = clip;
-            audioSource2.Play();
-        }
+        victoryMusic.Stop();
+        battleMusic.Play();
     }
 
-    public void SwitchMusic()
+    public void PlayVictory()
     {
-        if (isPlayingFirstClip)
-        {
-            audioSource1.Stop();
-            PlayMusic(victoryMusic);
-        }
-        else
-        {
-            audioSource2.Stop();
-            PlayMusic(battleMusic);
-        }
-        isPlayingFirstClip = !isPlayingFirstClip;
+        battleMusic.Stop();
+        victoryMusic.Play();
     }
 }

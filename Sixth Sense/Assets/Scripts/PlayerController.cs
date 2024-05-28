@@ -28,6 +28,11 @@ public class PlayerController : MonoBehaviour
         playerInputActions = new PlayerInputActions();
         gameBoardManager = FindObjectOfType<GameBoardManager>();
         turnManager = FindObjectOfType<TurnManager>();
+
+        initialPosition = Vector2Int.RoundToInt(transform.position);
+        gridPosition = initialPosition;
+        gameBoardManager.SetUnitPosition(gridPosition, playerUnit);
+
         playerInputActions.Player.Attack.performed += ctx => OnAttack();
         playerInputActions.Player.Special.performed += ctx => OnSpecial();
         playerInputActions.Player.Block.performed += ctx => OnBlock();
@@ -40,6 +45,7 @@ public class PlayerController : MonoBehaviour
         playerInputActions.Player.Enable();
         turnManager.OnPlayerTurnStart += StartPlayerTurn;
         turnManager.OnPlayerTurnEnd += EndPlayerTurn;
+        gameBoardManager.OnBoardReady += Begin;
     }
 
     private void OnDisable()
@@ -49,11 +55,8 @@ public class PlayerController : MonoBehaviour
         turnManager.OnPlayerTurnEnd -= EndPlayerTurn;
     }
 
-    private void Start()
+    private void Begin()
     {
-        initialPosition = Vector2Int.RoundToInt(transform.position);
-        gridPosition = initialPosition;
-        gameBoardManager.SetUnitPosition(gridPosition, playerUnit);
         UpdateSpecialIndicator();
     }
 

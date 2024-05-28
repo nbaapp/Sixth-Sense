@@ -11,6 +11,7 @@ public class TurnManager : MonoBehaviour
     private float currentTurnTime;
     private float turnTimer;
     public bool isPlayerTurn { get; private set; } = false; // Expose isPlayerTurn as a public property
+    public bool gameRunning = true;
     private int turnCount = 0;
 
     public delegate void TurnEvent();
@@ -25,19 +26,28 @@ public class TurnManager : MonoBehaviour
     public float CurrentTurnTime => currentTurnTime;
     public float RemainingTurnTime => turnTimer;
 
-    private void Start()
+    private void Awake()
     {
         gameBoardManager = FindObjectOfType<GameBoardManager>();
 
         currentTurnTime = initialTurnTime;
         turnCount = 0;
+        gameRunning = true;
 
+        gameBoardManager.OnBoardReady += Begin;
+    }
+    private void Begin()
+    {
         StartEnemyActionSelect();
     }
 
     private void Update()
     {
-        if (isPlayerTurn)
+        TurnTimer();
+    }
+
+    private void TurnTimer() {
+        if (isPlayerTurn && gameRunning)
         {
             turnTimer -= Time.deltaTime;
             if (turnTimer <= 0)
@@ -54,18 +64,19 @@ public class TurnManager : MonoBehaviour
 
     private void StartEnemyActionSelect()
     {
+        if (!gameRunning) return;
         OnEnemyActionSelectStart?.Invoke(); // Notify that the enemy action selection has started
         StartCoroutine(EnemyActionSelect());
     }
 
     private IEnumerator EnemyActionSelect()
     {
+        yield return new WaitForSeconds(enemyTurnDuration);
         foreach (var enemy in FindObjectsOfType<Enemy>())
         {
             if (enemy != null)
             {
                 enemy.SelectAction();
-                yield return new WaitForSeconds(enemyTurnDuration);
             }
         }
 
@@ -77,6 +88,7 @@ public class TurnManager : MonoBehaviour
 
     private void StartPlayerTurn()
     {
+        if (!gameRunning) return;
         isPlayerTurn = true;
         turnTimer = currentTurnTime;
         OnPlayerTurnStart?.Invoke(); // Notify that the player turn has started
@@ -84,6 +96,7 @@ public class TurnManager : MonoBehaviour
 
     public void EndPlayerTurn(bool resetTurnTime = false)
     {
+        if (!gameRunning) return;
         if (resetTurnTime)
         {
             currentTurnTime = initialTurnTime;
