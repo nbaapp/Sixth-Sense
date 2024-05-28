@@ -28,9 +28,11 @@ public class TurnManager : MonoBehaviour
     private void Start()
     {
         gameBoardManager = FindObjectOfType<GameBoardManager>();
+
         currentTurnTime = initialTurnTime;
-        StartEnemyActionSelect();
         turnCount = 0;
+
+        StartEnemyActionSelect();
     }
 
     private void Update()

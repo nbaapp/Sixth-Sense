@@ -13,10 +13,6 @@ public class TitleScreenManager : MonoBehaviour
         credits.SetActive(false);
         howToPlay.SetActive(false);
     }
-    public void StartGame()
-    {
-        SceneManager.LoadScene("Combat");
-    }
 
     public void OpenCredits()
     {

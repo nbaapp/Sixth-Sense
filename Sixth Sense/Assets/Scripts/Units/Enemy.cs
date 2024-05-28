@@ -8,12 +8,14 @@ public abstract class Enemy : Unit
     protected List<Vector2Int> targetedTiles = new List<Vector2Int>();
     public GameObject healthBarPrefab;
     private HealthBar healthBar;
+    private EnemySpawner enemySpawner;
 
     protected virtual void Awake()
     {
         gameBoardManager = FindObjectOfType<GameBoardManager>();
         playerUnit = FindObjectOfType<PlayerUnit>();
         turnManager = FindObjectOfType<TurnManager>();
+        enemySpawner = FindObjectOfType<EnemySpawner>();
     }
 
     protected override void Start()
@@ -83,6 +85,7 @@ public abstract class Enemy : Unit
 
     protected override void Die()
     {
+        enemySpawner.EnemyDied();
         ClearHighlights();
         base.Die();
     }

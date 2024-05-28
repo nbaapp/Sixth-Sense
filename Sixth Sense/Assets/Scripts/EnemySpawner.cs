@@ -11,41 +11,70 @@ public class EnemySpawner : MonoBehaviour
 
     private GameBoardManager gameBoardManager;
     private TurnManager turnManager;
+    private GameLogic gameLogic;
     private int enemiesSpawned = 0;
+    private int enemiesAlive = 0;
 
     void Start()
     {
         gameBoardManager = FindObjectOfType<GameBoardManager>();
         turnManager = FindObjectOfType<TurnManager>();
+        gameLogic = FindObjectOfType<GameLogic>();
+
         turnManager.OnPlayerTurnEnd += HandleTurnEnd;
+        gameBoardManager.OnBoardReady += HandleBoardReady;
     }
 
     void HandleTurnEnd()
     {
-        if (turnManager.GetTurnCount() % spawnInterval == 0 && enemiesSpawned < totalEnemiesToSpawn)
+        if (turnManager.GetTurnCount() % spawnInterval == 0 && enemiesSpawned < totalEnemiesToSpawn || enemiesAlive <= 0)
         {
             SpawnEnemies();
         }
     }
 
-    void SpawnEnemies()
+    void HandleBoardReady()
+    {
+        SpawnEnemies();
+    }
+
+    public void EnemyDied()
+    {
+        enemiesAlive--;
+        if (enemiesAlive <= 0)
+        {
+            SpawnEnemies();
+        }
+    }
+
+    private void WaveCompleted()
+    {
+        gameLogic.Victory();
+    }
+
+    private void SpawnEnemies()
     {
         int spawnCount = Random.Range(1, maxSpawnNumber + 1);
         for (int i = 0; i < spawnCount; i++)
         {
-            if (enemiesSpawned >= totalEnemiesToSpawn) break;
-
-            Vector2Int spawnPosition = FindSpawnPosition();
-            if (spawnPosition != Vector2Int.one * -1)
-            {
-                float randomValue = Random.value;
-                if (randomValue <= slimeSpawnPercentage)
-                {
-                    Instantiate(slimePrefab, new Vector3(spawnPosition.x, spawnPosition.y, 0), Quaternion.identity);
-                }
-                // Add other enemy types spawn logic based on their percentage here
-                enemiesSpawned++;
+            if (enemiesSpawned >= totalEnemiesToSpawn && enemiesAlive <= 0) {
+                WaveCompleted();
+                return;
             }
+            else if (enemiesSpawned < totalEnemiesToSpawn){
+                Vector2Int spawnPosition = FindSpawnPosition();
+                if (spawnPosition != Vector2Int.one * -1)
+                {
+                    float randomValue = Random.value;
+                    if (randomValue <= slimeSpawnPercentage)
+                    {
+                        Instantiate(slimePrefab, new Vector3(spawnPosition.x, spawnPosition.y, 0), Quaternion.identity);
+                    }
+                    // Add other enemy types spawn logic based on their percentage here
+                    enemiesSpawned++;
+                    enemiesAlive++;
+                }
+            } 
         }
     }
 

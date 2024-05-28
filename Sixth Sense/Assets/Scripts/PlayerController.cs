@@ -247,4 +247,14 @@ public class PlayerController : MonoBehaviour
             specialIndicator.color = Color.green;
         }
     }
+
+    public void DisableControls()
+    {
+        playerInputActions.Player.Disable();
+    }
+
+    public void EnableControls()
+    {
+        playerInputActions.Player.Enable();
+    }
 }
