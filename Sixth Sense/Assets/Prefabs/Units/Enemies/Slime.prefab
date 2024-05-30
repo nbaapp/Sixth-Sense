@@ -104,5 +104,6 @@ MonoBehaviour:
   defense: 4
   resistance: 2
   moveSpeed: 2
+  moveDuration: 0.1
   healthBarPrefab: {fileID: 5042804021969595448, guid: d76cde57936aa4b1abcc10951aea564a, type: 3}
   TacklePower: 5

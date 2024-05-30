@@ -81,6 +81,7 @@ public class PlayerController : MonoBehaviour
         else
         {
             Move(gridPosition + direction);
+            Rotate(direction);
         }
     }
 
@@ -94,7 +95,10 @@ public class PlayerController : MonoBehaviour
         isMoving = true;
         moveTimer = moveTime;
 
+
         Invoke(nameof(StopMoving), moveTimer);
+
+        turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after moving
     }
 
     private void StopMoving()
@@ -109,19 +113,10 @@ public class PlayerController : MonoBehaviour
         else if (direction.y > 0) attackDirection = Vector2Int.up;
         else if (direction.y < 0) attackDirection = Vector2Int.down;
 
-        // Update action highlights if currently attacking or specialing
-        if (isAttacking || isSpecialing)
-        {
-            gameBoardManager.ClearHighlights("Attack");
-            if (isAttacking)
-            {
-                playerUnit.Attack(gridPosition, attackDirection);
-            }
-            else if (isSpecialing)
-            {
-                playerUnit.Special(gridPosition, attackDirection);
-            }
-        }
+        
+        gameBoardManager.ClearHighlights("Attack");
+        playerUnit.Attack(gridPosition, attackDirection);
+        
     }
 
     private void HighlightReachableTiles()
@@ -154,6 +149,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnAttack()
     {
+        /*
         if (isAttacking)
         {
             playerUnit.ExecuteAttack(gridPosition, attackDirection);
@@ -166,10 +162,15 @@ public class PlayerController : MonoBehaviour
             isAttacking = true;
             isSpecialing = false; // Cancel special if it's in progress
         }
+        */
+        playerUnit.ExecuteAttack(gridPosition, attackDirection);
+        isAttacking = false;
+        turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after executing attack
     }
 
     private void OnSpecial()
     {
+        /*
         if (isSpecialing)
         {
             playerUnit.ExecuteSpecial(gridPosition, attackDirection);
@@ -183,6 +184,10 @@ public class PlayerController : MonoBehaviour
             isSpecialing = true;
             isAttacking = false; // Cancel attack if it's in progress
         }
+        */
+        playerUnit.ExecuteSpecial(gridPosition, attackDirection);
+        turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after executing special
+        UpdateSpecialIndicator();
     }
 
     private void OnBlock()
@@ -225,6 +230,7 @@ public class PlayerController : MonoBehaviour
         playerUnit.ReduceSpecialCooldown();
         UpdateSpecialIndicator();
         HighlightReachableTiles(); // Highlight reachable tiles at the start of the turn
+        Rotate(attackDirection); // set attack direction
     }
 
     private void EndPlayerTurn()

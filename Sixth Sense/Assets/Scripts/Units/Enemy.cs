@@ -9,6 +9,10 @@ public abstract class Enemy : Unit
     public GameObject healthBarPrefab;
     private HealthBar healthBar;
     private EnemySpawner enemySpawner;
+    private SFX sfx;
+
+    private bool hitPlayer = false;
+    private bool hitEnemy = false;
 
     protected virtual void Awake()
     {
@@ -16,6 +20,7 @@ public abstract class Enemy : Unit
         playerUnit = FindObjectOfType<PlayerUnit>();
         turnManager = FindObjectOfType<TurnManager>();
         enemySpawner = FindObjectOfType<EnemySpawner>();
+        sfx = FindObjectOfType<SFX>();
     }
 
     protected override void Start()
@@ -31,18 +36,51 @@ public abstract class Enemy : Unit
         }
     }
 
+    protected override void Die()
+    {
+        ClearHighlights();
+        enemySpawner.EnemyDied();
+        base.Die();
+    }
+
     public abstract void SelectAction();
 
-    public void ExecuteAction(int attackPower = 0)
+    protected virtual void ExecuteAction()
     {
+        hitPlayer = false;
+        hitEnemy = false;
         foreach (Vector2Int tile in targetedTiles)
         {
-            if (gameBoardManager.GetOccupantType(tile) != OccupantType.None)
+            OccupantType occupant = gameBoardManager.GetOccupantType(tile);
+            if (occupant != OccupantType.None)
             {
+                if (occupant == OccupantType.Player)
+                {
+                    hitPlayer = true;
+                }
+                else if (occupant == OccupantType.Enemy)
+                {
+                    hitEnemy = true;
+                }
+
                 Unit unit = gameBoardManager.GetUnitAtPosition(tile);
-                PhysicalAttack(unit, attackPower);
+                PhysicalAttack(unit, 0);
             }
         }
+
+        if (hitPlayer)
+        {
+            sfx.PlayUgh();
+        }
+        else if (hitEnemy)
+        {
+            sfx.PlayImpact();
+        }
+        else
+        {
+            sfx.PlaySwordWhoosh();
+        }
+
         ClearHighlights();
         targetedTiles.Clear();
     }
@@ -63,36 +101,22 @@ public abstract class Enemy : Unit
 
     public override void TakeDamage(int damage)
     {
+        CancelAction();
         base.TakeDamage(damage);
-        if (currentHealth > 0)
-        {
-            CancelAction();
-        }
         if (healthBar != null)
         {
             healthBar.SetHealth(currentHealth);
         }
     }
 
-    public override void Heal(int amount)
+    public void MoveTowards(Vector2Int targetPosition)
     {
-        base.Heal(amount);
-        if (healthBar != null)
-        {
-            healthBar.SetHealth(currentHealth);
-        }
+        Vector2Int newPosition = FindClosestPosition(currentPosition, targetPosition, moveSpeed);
+        Move(newPosition);
     }
 
-    protected override void Die()
+    private Vector2Int FindClosestPosition(Vector2Int currentPosition, Vector2Int targetPosition, int moveSpeed)
     {
-        enemySpawner.EnemyDied();
-        ClearHighlights();
-        base.Die();
-    }
-
-    protected Vector2Int GetPositionWithinMovementRange(Vector2Int currentPosition, Vector2Int targetPosition, int moveSpeed)
-    {
-        // Implement a simple BFS to find the closest position to the target within the movement range
         Queue<Vector2Int> queue = new Queue<Vector2Int>();
         Dictionary<Vector2Int, int> distances = new Dictionary<Vector2Int, int>();
         List<Vector2Int> directions = new List<Vector2Int> { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
@@ -129,7 +153,6 @@ public abstract class Enemy : Unit
             }
         }
 
-        // Find the closest valid position within movement range
         Vector2Int closestPosition = currentPosition;
         float closestDistance = Vector2Int.Distance(currentPosition, targetPosition);
 

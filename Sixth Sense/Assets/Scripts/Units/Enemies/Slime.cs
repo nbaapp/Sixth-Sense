@@ -1,62 +1,57 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UIElements.Experimental;
 
 public class Slime : Enemy
 {
     private Vector2Int targetPosition;
     private Vector2Int attackPosition;
     public int TacklePower = 0;
+    private bool isAttacking = false;
 
     protected override void Awake()
     {
         base.Awake();
+        isAttacking = false;
     }
 
     public override void SelectAction()
     {
-        Tackle();
+        if (isAttacking) {
+            ExecuteAction();
+
+            if (gameBoardManager.GetOccupantType(attackPosition) == OccupantType.None)
+            {
+                Move(attackPosition);
+            }
+
+            isAttacking = false;
+        }
+        else if (IsAdjacentToPlayer()) {
+            Tackle();
+            isAttacking = true;
+        }
+        else {
+            MoveTowards(playerUnit.GetUnitPosition());
+        }
     }
 
     private void Tackle()
     {
         Vector2Int playerPosition = playerUnit.GetUnitPosition();
+        
+        attackPosition = playerPosition;
+        targetedTiles.Add(attackPosition);
+        gameBoardManager.HighlightTile(attackPosition, "Enemy");
+    }
+
+    private bool IsAdjacentToPlayer()
+    {
+        Vector2Int playerPosition = playerUnit.GetUnitPosition();
         Vector2Int currentPosition = GetUnitPosition();
 
-        // Determine if adjacent to player
         List<Vector2Int> adjacentPositions = GetAdjacentPositions(currentPosition);
-        bool isAdjacentToPlayer = adjacentPositions.Contains(playerPosition);
-
-        if (isAdjacentToPlayer)
-        {
-            // If adjacent to the player, attack the player's position
-            attackPosition = playerPosition;
-            targetedTiles.Add(attackPosition);
-            gameBoardManager.HighlightTile(attackPosition, "Enemy");
-        }
-        else
-        {
-            // Move towards the player within movement range
-            targetPosition = GetPositionWithinMovementRange(currentPosition, playerPosition, moveSpeed);
-            Move(targetPosition);
-
-            // After moving, determine the new adjacent positions
-            adjacentPositions = GetAdjacentPositions(targetPosition);
-            isAdjacentToPlayer = adjacentPositions.Contains(playerPosition);
-
-            if (isAdjacentToPlayer)
-            {
-                // If now adjacent to the player, attack the player's position
-                attackPosition = playerPosition;
-            }
-            else
-            {
-                // Otherwise, select a random adjacent position to attack
-                attackPosition = SelectRandomAttackPosition(adjacentPositions);
-            }
-
-            targetedTiles.Add(attackPosition);
-            gameBoardManager.HighlightTile(attackPosition, "Enemy");
-        }
+        return adjacentPositions.Contains(playerPosition);
     }
 
     private List<Vector2Int> GetAdjacentPositions(Vector2Int position)
@@ -90,6 +85,6 @@ public class Slime : Enemy
             return validPositions[randomIndex];
         }
 
-        return GetUnitPosition(); // No valid position to attack
+        return GetUnitPosition();
     }
 }

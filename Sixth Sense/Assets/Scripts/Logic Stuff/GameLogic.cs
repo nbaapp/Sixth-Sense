@@ -16,5 +16,13 @@ public class GameLogic : MonoBehaviour
         musicManager.PlayVictory();
         turnManager.gameRunning = false;
     }
+
+    public void GameOver()
+    {
+        uiManager.ShowDefeatScreen();
+        playerController.DisableControls();
+        musicManager.PlayGameOver();
+        turnManager.gameRunning = false;
+    }
     
 }

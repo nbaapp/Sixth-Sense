@@ -42,15 +42,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "ConfirmMove",
-                    "type": "Button",
-                    "id": "bc494a86-a90f-480c-a803-7e22dbd07e95",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "LockPosition",
                     "type": "Button",
                     "id": "15514b84-6985-4e2f-8833-e380e7ec055b",
@@ -217,6 +208,17 @@
                 },
                 {
                     "name": "",
+                    "id": "9adc2f7f-d7d2-4392-9622-874963d9dd2f",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard",
+                    "action": "Special",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "e76c1353-72f2-4584-b26a-c6054575a786",
                     "path": "<Gamepad>/buttonWest",
                     "interactions": "",
@@ -233,6 +235,17 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
+                    "action": "LockPosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "8c46485e-6c30-48f1-938a-70dce78a7134",
+                    "path": "<Keyboard>/leftShift",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard",
                     "action": "LockPosition",
                     "isComposite": false,
                     "isPartOfComposite": false

@@ -64,15 +64,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""ConfirmMove"",
-                    ""type"": ""Button"",
-                    ""id"": ""bc494a86-a90f-480c-a803-7e22dbd07e95"",
-                    ""expectedControlType"": ""Button"",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
                     ""name"": ""LockPosition"",
                     ""type"": ""Button"",
                     ""id"": ""15514b84-6985-4e2f-8833-e380e7ec055b"",
@@ -239,6 +230,17 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""9adc2f7f-d7d2-4392-9622-874963d9dd2f"",
+                    ""path"": ""<Keyboard>/enter"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
+                    ""action"": ""Special"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""e76c1353-72f2-4584-b26a-c6054575a786"",
                     ""path"": ""<Gamepad>/buttonWest"",
                     ""interactions"": """",
@@ -255,6 +257,17 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""Gamepad"",
+                    ""action"": ""LockPosition"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8c46485e-6c30-48f1-938a-70dce78a7134"",
+                    ""path"": ""<Keyboard>/leftShift"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": ""Keyboard"",
                     ""action"": ""LockPosition"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
@@ -281,7 +294,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Player_Attack = m_Player.FindAction("Attack", throwIfNotFound: true);
         m_Player_Special = m_Player.FindAction("Special", throwIfNotFound: true);
         m_Player_Block = m_Player.FindAction("Block", throwIfNotFound: true);
-        m_Player_ConfirmMove = m_Player.FindAction("ConfirmMove", throwIfNotFound: true);
         m_Player_LockPosition = m_Player.FindAction("LockPosition", throwIfNotFound: true);
     }
 
@@ -348,7 +360,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Attack;
     private readonly InputAction m_Player_Special;
     private readonly InputAction m_Player_Block;
-    private readonly InputAction m_Player_ConfirmMove;
     private readonly InputAction m_Player_LockPosition;
     public struct PlayerActions
     {
@@ -358,7 +369,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         public InputAction @Attack => m_Wrapper.m_Player_Attack;
         public InputAction @Special => m_Wrapper.m_Player_Special;
         public InputAction @Block => m_Wrapper.m_Player_Block;
-        public InputAction @ConfirmMove => m_Wrapper.m_Player_ConfirmMove;
         public InputAction @LockPosition => m_Wrapper.m_Player_LockPosition;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
@@ -381,9 +391,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Block.started += instance.OnBlock;
             @Block.performed += instance.OnBlock;
             @Block.canceled += instance.OnBlock;
-            @ConfirmMove.started += instance.OnConfirmMove;
-            @ConfirmMove.performed += instance.OnConfirmMove;
-            @ConfirmMove.canceled += instance.OnConfirmMove;
             @LockPosition.started += instance.OnLockPosition;
             @LockPosition.performed += instance.OnLockPosition;
             @LockPosition.canceled += instance.OnLockPosition;
@@ -403,9 +410,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Block.started -= instance.OnBlock;
             @Block.performed -= instance.OnBlock;
             @Block.canceled -= instance.OnBlock;
-            @ConfirmMove.started -= instance.OnConfirmMove;
-            @ConfirmMove.performed -= instance.OnConfirmMove;
-            @ConfirmMove.canceled -= instance.OnConfirmMove;
             @LockPosition.started -= instance.OnLockPosition;
             @LockPosition.performed -= instance.OnLockPosition;
             @LockPosition.canceled -= instance.OnLockPosition;
@@ -450,7 +454,6 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         void OnAttack(InputAction.CallbackContext context);
         void OnSpecial(InputAction.CallbackContext context);
         void OnBlock(InputAction.CallbackContext context);
-        void OnConfirmMove(InputAction.CallbackContext context);
         void OnLockPosition(InputAction.CallbackContext context);
     }
 }

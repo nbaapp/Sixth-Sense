@@ -7,16 +7,34 @@ public class PlayerUnit : Unit
     public Special equippedSpecial;
     private int specialCooldown;
     public int SpecialCooldown => specialCooldown; // Getter for the special cooldown
-
+    private PlayerController playerController;
+    private SFX sfx;
+    private GameLogic gameLogic;
     public HealthBar healthBar;
+    private bool hitEnemy = false;
 
     protected override void Start()
     {
         base.Start();
-        currentPosition = Vector2Int.RoundToInt(transform.position);
+        playerController = FindObjectOfType<PlayerController>();
+        sfx = FindObjectOfType<SFX>();
+        gameLogic = FindObjectOfType<GameLogic>();
         gameBoardManager = FindObjectOfType<GameBoardManager>(); // Get the GameBoardManager instance
+
+        currentPosition = Vector2Int.RoundToInt(transform.position);
         gameBoardManager.SetUnitPosition(currentPosition, this); // Register the initial position
         healthBar.SetMaxHealth(maxHealth);
+    }
+
+    public override void Move(Vector2Int newPosition) {
+        playerController.DisableControls();
+
+        gameBoardManager.RemoveUnitPosition(currentPosition);
+        StartCoroutine(LerpPosition(newPosition, moveDuration));
+        currentPosition = newPosition;
+        gameBoardManager.SetUnitPosition(newPosition, this);
+
+        playerController.EnableControls();
     }
 
     public void Attack(Vector2Int position, Vector2Int direction)
@@ -37,12 +55,15 @@ public class PlayerUnit : Unit
     {
         if (equippedWeapon == null) return;
 
+        hitEnemy = false;
+
         List<Vector2Int> attackTiles = equippedWeapon.GetAttackTiles(position, direction);
 
         foreach (var tile in attackTiles)
         {
             if (gameBoardManager.GetOccupantType(tile) != OccupantType.None)
             {
+                hitEnemy = true;
                 Unit unit = gameBoardManager.GetUnitAtPosition(tile);
                 if (equippedWeapon.isMagical)
                 {
@@ -55,6 +76,14 @@ public class PlayerUnit : Unit
             }
         }
 
+        if (hitEnemy)
+        {
+            sfx.PlayImpact();
+        }
+        else
+        {
+            sfx.PlaySwordWhoosh();
+        }
 
         // Clear attack highlights
         gameBoardManager.ClearHighlights("Attack");
@@ -103,9 +132,9 @@ public class PlayerUnit : Unit
 
     protected override void Die()
     {
-        base.Die();
         gameBoardManager.RemoveUnitPosition(currentPosition);
-        // Additional player-specific death handling
+        gameLogic.GameOver();
+        base.Die();
     }
 
     public override void TakeDamage(int damage)

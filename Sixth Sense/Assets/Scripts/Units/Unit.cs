@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Unit : MonoBehaviour
@@ -12,7 +13,7 @@ public class Unit : MonoBehaviour
 
     protected Vector2Int currentPosition;
     protected GameBoardManager gameBoardManager;
-    
+    public float moveDuration = 0.5f; // Duration for the lerp movement
 
     protected virtual void Start()
     {
@@ -62,12 +63,28 @@ public class Unit : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void Move(Vector2Int newPosition)
+    public virtual void Move(Vector2Int newPosition)
     {
         gameBoardManager.RemoveUnitPosition(currentPosition);
+        StartCoroutine(LerpPosition(newPosition, moveDuration));
         currentPosition = newPosition;
-        transform.position = new Vector3(newPosition.x, newPosition.y, transform.position.z);
         gameBoardManager.SetUnitPosition(newPosition, this);
+    }
+
+    protected IEnumerator LerpPosition(Vector2Int targetPosition, float duration)
+    {
+        Vector3 startPosition = transform.position;
+        Vector3 endPosition = new Vector3(targetPosition.x, targetPosition.y, transform.position.z);
+        float timeElapsed = 0;
+
+        while (timeElapsed < duration)
+        {
+            transform.position = Vector3.Lerp(startPosition, endPosition, timeElapsed / duration);
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+        
+        transform.position = endPosition; // Ensure final position is set
     }
 
     public Vector2Int GetUnitPosition()

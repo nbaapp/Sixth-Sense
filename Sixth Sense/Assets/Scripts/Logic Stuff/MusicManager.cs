@@ -4,6 +4,7 @@ public class MusicManager : MonoBehaviour
 {
     public AudioSource battleMusic;
     public AudioSource victoryMusic;
+    public AudioSource gameOverMusic;
 
     void Start()
     {
@@ -12,13 +13,26 @@ public class MusicManager : MonoBehaviour
 
     public void PlayBattle()
     {
-        victoryMusic.Stop();
+        StopMusic();
         battleMusic.Play();
     }
 
     public void PlayVictory()
     {
-        battleMusic.Stop();
+        StopMusic();
         victoryMusic.Play();
+    }
+
+    public void PlayGameOver()
+    {
+        StopMusic();
+        gameOverMusic.Play();
+    }
+
+    public void StopMusic()
+    {
+        battleMusic.Stop();
+        victoryMusic.Stop();
+        gameOverMusic.Stop();
     }
 }
