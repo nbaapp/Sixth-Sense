@@ -14,3 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   specialName: Earthquake
   cooldown: 5
+  physicalStrength: 0
+  magicalStrength: 0
+  isPhysical: 0
+  isMagical: 1
+  gameBoardManager: {fileID: 0}
+  playerUnit: {fileID: 0}

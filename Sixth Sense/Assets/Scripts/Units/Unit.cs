@@ -25,14 +25,12 @@ public class Unit : MonoBehaviour
 
     public virtual void PhysicalAttack(Unit target, int attackPower)
     {
-        int damage = attackPower + strength - target.defense;
-        target.TakeDamage(damage);
+        target.TakeDamage(attackPower - target.defense);
     }
 
     public virtual void MagicalAttack(Unit target, int attackPower)
     {
-        int damage = attackPower + magic - target.resistance;
-        target.TakeDamage(damage);
+        target.TakeDamage(attackPower - target.resistance);
     }
 
     public virtual void TakeDamage(int damage)

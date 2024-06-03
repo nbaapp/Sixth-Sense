@@ -596,6 +596,18 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 3442304185379952826, guid: 5f20d23a30c014a1787e7af28e20967d, type: 3}
+      propertyPath: magic
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 3442304185379952826, guid: 5f20d23a30c014a1787e7af28e20967d, type: 3}
+      propertyPath: defense
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3442304185379952826, guid: 5f20d23a30c014a1787e7af28e20967d, type: 3}
+      propertyPath: strength
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3442304185379952826, guid: 5f20d23a30c014a1787e7af28e20967d, type: 3}
       propertyPath: healthBar
       value: 
       objectReference: {fileID: 900105804}
@@ -1037,8 +1049,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialTurnTime: 15
-  minTurnTime: 3
-  turnTimeDecrease: 1
+  minTurnTime: 2
+  turnTimeDecrease: 2
   enemyTurnDuration: 0.2
   gameRunning: 1
 --- !u!114 &508962388
@@ -2017,6 +2029,8 @@ MonoBehaviour:
   victoryScreen: {fileID: 1608393068}
   gameOverScreen: {fileID: 1687369251}
   standardUI: {fileID: 1164196875}
+  feverColor: {r: 0.22352937, g: 0.9459661, b: 0.9607843, a: 1}
+  normalColor: {r: 0.9607844, g: 0.73333335, b: 0.22352943, a: 1}
 --- !u!114 &1394134040
 MonoBehaviour:
   m_ObjectHideFlags: 0

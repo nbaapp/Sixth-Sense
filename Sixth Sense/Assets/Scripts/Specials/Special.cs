@@ -12,7 +12,7 @@ public abstract class Special : ScriptableObject
     public GameBoardManager gameBoardManager;
     public PlayerUnit playerUnit;
     public abstract List<Vector2Int> GetAffectedTiles(Vector2Int position, Vector2Int direction);
-    public abstract void ExecuteSpecial(Vector2Int position, Vector2Int direction);
+    public abstract void ExecuteSpecial(Vector2Int position, Vector2Int direction, int damage);
 
     public void getGameBoardManager()
     {

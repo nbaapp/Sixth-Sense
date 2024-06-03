@@ -26,7 +26,7 @@ public class Earthquake : Special
         return affectedTiles;
     }
 
-    public override void ExecuteSpecial(Vector2Int position, Vector2Int direction)
+    public override void ExecuteSpecial(Vector2Int position, Vector2Int direction, int damage)
     {
         if (playerUnit == null) getPlayerUnit();
         if (gameBoardManager == null) getGameBoardManager();
@@ -40,11 +40,11 @@ public class Earthquake : Special
                 Unit unit = gameBoardManager.GetUnitAtPosition(tile);
                 if (isMagical)
                 {
-                    playerUnit.MagicalAttack(unit, magicalStrength);
+                    playerUnit.MagicalAttack(unit, damage);
                 }
                 else if (isPhysical)
                 {
-                    playerUnit.PhysicalAttack(unit, physicalStrength);
+                    playerUnit.PhysicalAttack(unit, damage);
                 }
             }
         }

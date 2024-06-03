@@ -170,7 +170,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnSpecial()
     {
-        /*
+        
         if (isSpecialing)
         {
             playerUnit.ExecuteSpecial(gridPosition, attackDirection);
@@ -184,10 +184,10 @@ public class PlayerController : MonoBehaviour
             isSpecialing = true;
             isAttacking = false; // Cancel attack if it's in progress
         }
-        */
+        /*
         playerUnit.ExecuteSpecial(gridPosition, attackDirection);
         turnManager.EndPlayerTurn(resetTurnTime: false); // End turn after executing special
-        UpdateSpecialIndicator();
+        UpdateSpecialIndicator(); */
     }
 
     private void OnBlock()

@@ -20,13 +20,16 @@ public class TurnManager : MonoBehaviour
     public event TurnEvent OnEnemyActionStart;
     public event TurnEvent OnEnemyActionEnd;
     private GameBoardManager gameBoardManager;
+    private UIManager uiManager;
 
     public float CurrentTurnTime => currentTurnTime;
     public float RemainingTurnTime => turnTimer;
+    bool feverMode = false;
 
     private void Awake()
     {
         gameBoardManager = FindObjectOfType<GameBoardManager>();
+        uiManager = FindObjectOfType<UIManager>();
 
         currentTurnTime = initialTurnTime;
         turnCount = 0;
@@ -75,12 +78,21 @@ public class TurnManager : MonoBehaviour
         if (!gameRunning) return;
         if (resetTurnTime)
         {
-            currentTurnTime = initialTurnTime;
+            ResetTurnTimer();
+            if (feverMode) {
+                EndFeverMode();
+            }
         }
         else
         {
             // Update the turn timer
             currentTurnTime = Mathf.Max(minTurnTime, currentTurnTime - turnTimeDecrease);
+            if (currentTurnTime <= minTurnTime)
+            {
+                if (!feverMode) {
+                    StartFeverMode();
+                }
+            }
         }
 
         turnCount++;
@@ -88,6 +100,33 @@ public class TurnManager : MonoBehaviour
         OnPlayerTurnEnd?.Invoke(); // Notify that the player turn has ended
         StartEnemyAction();
     }
+
+    public void ResetTurnTimer()
+    {
+        if (currentTurnTime != initialTurnTime) {
+            currentTurnTime = initialTurnTime;
+        }
+    }
+
+    public void StartFeverMode()
+    {
+        if (!gameRunning) return;
+        feverMode = true;
+        uiManager.SetFeverModeSlider(feverMode);
+        
+    }
+
+    public void EndFeverMode()
+    {
+        if (!gameRunning) return;
+        feverMode = false;
+        uiManager.SetFeverModeSlider(feverMode);
+    }
+
+    public bool IsFeverMode()
+    {
+        return feverMode;
+    } 
 
     private void StartEnemyAction()
     {

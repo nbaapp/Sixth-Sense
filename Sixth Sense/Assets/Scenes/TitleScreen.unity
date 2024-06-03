@@ -1498,7 +1498,7 @@ Canvas:
   m_GameObject: {fileID: 638227410}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 2052186604}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -2169,7 +2169,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: -400, y: -150}
-  m_SizeDelta: {x: 631, y: 390.2}
+  m_SizeDelta: {x: 971.7, y: 657.08}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &961108944
 MonoBehaviour:
@@ -2191,11 +2191,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Turn Timer:
+  m_text: 'Fever Mode:
 
     The time you have to take an action each turn decreases
-    by 2 seconds every time an action (move or attack) is taken. If an action is
-    not taken, the timer resets.'
+    by 2 seconds every time you move or attack. Once you have taken 8 successful
+    actions, you enter Fever Mode, where the turn timer stays at 2 seconds a turn.
+    While in Fever Mode, you deal 2x damage. If an action is not taken, or you take
+    damage, the timer resets and you exit Fever Mode.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0161d805a3764c089bef00bfe00793f5, type: 2}
   m_sharedMaterial: {fileID: 2147374, guid: 0161d805a3764c089bef00bfe00793f5, type: 2}
@@ -2421,7 +2423,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1197736999
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3265,7 +3267,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1538647517
 Transform:
   m_ObjectHideFlags: 0
@@ -3541,7 +3543,7 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Goal:
 
-    Defeat all enemies in the wave before until they stop spawning.'
+    Defeat all enemies in the wave until they stop spawning.'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 0161d805a3764c089bef00bfe00793f5, type: 2}
   m_sharedMaterial: {fileID: 2147374, guid: 0161d805a3764c089bef00bfe00793f5, type: 2}

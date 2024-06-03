@@ -13,3 +13,7 @@ MonoBehaviour:
   m_Name: Sword
   m_EditorClassIdentifier: 
   weaponName: Sword
+  physicalStrength: 0
+  magicalStrength: 0
+  isPhysical: 1
+  isMagical: 0

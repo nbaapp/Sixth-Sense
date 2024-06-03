@@ -11,6 +11,7 @@ public class PlayerUnit : Unit
     private SFX sfx;
     private GameLogic gameLogic;
     public HealthBar healthBar;
+    private TurnManager turnManager;
     private bool hitEnemy = false;
 
     protected override void Start()
@@ -20,6 +21,7 @@ public class PlayerUnit : Unit
         sfx = FindObjectOfType<SFX>();
         gameLogic = FindObjectOfType<GameLogic>();
         gameBoardManager = FindObjectOfType<GameBoardManager>(); // Get the GameBoardManager instance
+        turnManager = FindObjectOfType<TurnManager>();
 
         currentPosition = Vector2Int.RoundToInt(transform.position);
         gameBoardManager.SetUnitPosition(currentPosition, this); // Register the initial position
@@ -51,6 +53,8 @@ public class PlayerUnit : Unit
         }
     }
 
+    
+
     public void ExecuteAttack(Vector2Int position, Vector2Int direction)
     {
         if (equippedWeapon == null) return;
@@ -58,6 +62,8 @@ public class PlayerUnit : Unit
         hitEnemy = false;
 
         List<Vector2Int> attackTiles = equippedWeapon.GetAttackTiles(position, direction);
+
+        int attackDamage = GetAttackDamage();
 
         foreach (var tile in attackTiles)
         {
@@ -67,11 +73,11 @@ public class PlayerUnit : Unit
                 Unit unit = gameBoardManager.GetUnitAtPosition(tile);
                 if (equippedWeapon.isMagical)
                 {
-                    MagicalAttack(unit, equippedWeapon.magicalStrength);
+                    MagicalAttack(unit, attackDamage);
                 }
                 else if (equippedWeapon.isPhysical)
                 {
-                    PhysicalAttack(unit, equippedWeapon.physicalStrength);
+                    PhysicalAttack(unit, attackDamage);
                 }
             }
         }
@@ -107,7 +113,9 @@ public class PlayerUnit : Unit
     {
         if (equippedSpecial == null || specialCooldown > 0) return;
 
-        equippedSpecial.ExecuteSpecial(position, direction);
+        int specialDamage = GetSpecialDamage();
+
+        equippedSpecial.ExecuteSpecial(position, direction, specialDamage);
         specialCooldown = equippedSpecial.cooldown;
 
         ScreenShake.Instance.TriggerShake(0.2f, 0.2f);
@@ -141,6 +149,13 @@ public class PlayerUnit : Unit
     {
         base.TakeDamage(damage);
         healthBar.SetHealth(currentHealth);
+
+        turnManager.ResetTurnTimer();
+
+        if (turnManager.IsFeverMode()) {
+            turnManager.EndFeverMode();
+        }
+
         ScreenShake.Instance.TriggerShake(0.2f, 0.1f);
     }
 
@@ -148,5 +163,51 @@ public class PlayerUnit : Unit
     {
         base.Heal(amount);
         healthBar.SetHealth(currentHealth);
+    }
+
+    private int GetAttackDamage()
+    {
+        int attackDamage = 0;
+
+        if (equippedWeapon.isMagical)
+        {
+            attackDamage = equippedWeapon.magicalStrength;
+            attackDamage += magic;
+        }
+        else if (equippedWeapon.isPhysical)
+        {
+            attackDamage = equippedWeapon.physicalStrength;
+            attackDamage += strength;
+        }
+
+        if (turnManager.IsFeverMode())
+        {
+            attackDamage *= 2;
+        }
+
+        return attackDamage;
+    }
+
+    private int GetSpecialDamage()
+    {
+        int specialDamage = 0;
+
+        if (equippedSpecial.isMagical)
+        {
+            specialDamage = equippedSpecial.magicalStrength;
+            specialDamage += magic;
+        }
+        else if (equippedSpecial.isPhysical)
+        {
+            specialDamage = equippedSpecial.physicalStrength;
+            specialDamage += strength;
+        }
+
+        if (turnManager.IsFeverMode())
+        {
+            specialDamage *= 2;
+        }
+
+        return specialDamage;
     }
 }
